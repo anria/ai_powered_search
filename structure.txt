@@ -1,0 +1,26 @@
+ai_search_project/
+├── ai_search_project/
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+│   └── media/				← put your audios and videos types files here
+├── pages/
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py          (optional – we'll use a list)
+│   ├── views.py
+│   ├── urls.py
+│   ├── templates/
+│   │   ├── base.html
+│   │   ├── index.html
+│   │   ├── chapter.html
+│   │   └── search_results.html
+│   └── static/
+│       └── pages/
+│           └── logo.svg
+├── data/                   ← put your JSON files here
+│   ├── chapters.json
+│   └── other_data.json
+└── manage.py
