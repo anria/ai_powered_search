@@ -1,0 +1,13 @@
+name: docker-project 
+
+services: 
+  app:
+    build:
+      context: .
+      dockerfile: dockerfile
+    image: django-image
+    container_name: django-container
+    ports:
+      - "8000:8000"
+    volumes: 
+      - .:/app

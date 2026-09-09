@@ -1,0 +1,8 @@
+Django==4.2.30
+fastapi==0.129.2
+notebook==7.0.5
+notebook_shim==0.2.3
+numpy==1.26.0
+pandas==2.1.1
+pydantic==2.12.5
+pydantic_core==2.41.5
