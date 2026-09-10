@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 14px; background: #f9f9f9; padding: 10px; }
+        h3 { color: #00008B; margin-top: 0; }
+        ul { list-style: none; padding: 0; }
+        li { margin-bottom: 8px; }
+        a { color: #00008B; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .no-results { color: #555; }
+    </style>
+</head>
+<body>
+    <h3>Search Results</h3>
+    {% if query %}
+        <p>Showing results for "<strong>{{ query }}</strong>"</p>
+        {% if results %}
+            <ul>
+                {% for result in results %}
+                    <li><a href="{% url 'chapter' result.id %}" target="_parent">{{ result.title }}</a></li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="no-results">No chapters found containing "{{ query }}".</p>
+        {% endif %}
+    {% else %}
+        <p class="no-results">Enter a search term above to find chapters.</p>
+    {% endif %}
+</body>
+</html>

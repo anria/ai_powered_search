@@ -1,0 +1,91 @@
+# Let's fix the SVG code so that the text "AI" is clearly visible inside the glass lens (the previous output missed rendering the text block properly due to baseline positioning or masking issues).
+svg_content = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#e2e8f0" />
+    </radialGradient>
+
+    <!-- Glass Lens Gradient -->
+    <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+      <stop offset="50%" stop-color="#f0fdf4" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#e0f2fe" stop-opacity="0.7" />
+    </linearGradient>
+
+    <!-- Metallic/Sleek Rim Gradient -->
+    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9" />
+      <stop offset="50%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+
+    <!-- Handle Gradient -->
+    <linearGradient id="handleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#1e3a8a" />
+    </linearGradient>
+
+    <!-- AI Text Color -->
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e3a8a" />
+    </linearGradient>
+
+    <!-- Drop Shadow Filter -->
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.15" />
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.1" />
+    </filter>
+
+    <!-- Inner Shadow for Lens Depth -->
+    <filter id="innerShadow">
+      <feOffset dx="0" dy="4"/>
+      <feGaussianBlur stdDeviation="5" result="offset-blur"/>
+      <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"/>
+      <feFlood flood-color="#000000" flood-opacity="0.08" result="color"/>
+      <feComposite operator="in" in="color" in2="inverse" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+  </defs>
+
+  <!-- Clean Background -->
+  <rect width="500" height="500" rx="100" fill="url(#bgGrad)" />
+
+  <!-- Main Magnifying Glass Group -->
+  <g filter="url(#dropShadow)">
+    <!-- Handle -->
+    <g transform="rotate(-45 330 330)">
+      <rect x="315" y="325" width="36" height="120" rx="18" fill="url(#handleGrad)" />
+      <!-- Handle Highlight -->
+      <rect x="323" y="335" width="8" height="95" rx="4" fill="#ffffff" opacity="0.25" />
+    </g>
+
+    <!-- Outer Rim -->
+    <circle cx="215" cy="215" r="115" fill="url(#rimGrad)" />
+
+    <!-- Inner Glass Base -->
+    <circle cx="215" cy="215" r="98" fill="url(#lensGrad)" filter="url(#innerShadow)" />
+
+    <!-- Glass Glare / Reflection Arc -->
+    <path d="M 135 160 A 98 98 0 0 1 295 135 A 110 110 0 0 0 135 160 Z" fill="#ffffff" opacity="0.4" />
+  </g>
+
+  <!-- Centered 'AI' Typography -->
+  <text x="215" y="240" 
+        font-family="Arial, Helvetica, sans-serif" 
+        font-weight="900" 
+        font-size="86" 
+        letter-spacing="4"
+        fill="url(#textGrad)" 
+        text-anchor="middle">AI</text>
+
+  <!-- Subtle Accent Spark -->
+  <circle cx="282" cy="148" r="5" fill="#38bdf8" opacity="0.9" />
+  <circle cx="282" cy="148" r="2" fill="#ffffff" />
+</svg>
+'''
+
+with open("ai_search_logo.svg", "w") as f:
+    f.write(svg_content)
