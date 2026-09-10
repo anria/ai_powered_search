@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Search</title>
+    <style>
+        /* Reset and base */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 14px; background: #fff; }
+        a { text-decoration: none; color: #000066; }
+
+        /* Banner */
+        .banner {
+            background-color: #ADD8E6;
+            color: #000066;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .banner-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .banner-left svg {
+            width: 40px;
+            height: 40px;
+        }
+        .banner-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .banner-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .banner-right form {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .banner-right input[type="text"] {
+            padding: 5px 8px;
+            border: 1px solid #000066;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .banner-right button {
+            padding: 5px 12px;
+            background: #000066;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .banner-right select {
+            padding: 5px 8px;
+            border-radius: 4px;
+            border: 1px solid #000066;
+            font-size: 14px;
+            background: white;
+        }
+
+        /* Main content container – 65/35 */
+        .content {
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .left-column {
+            flex: 0 0 65%;
+            max-width: 65%;
+        }
+        .right-column {
+            flex: 0 0 35%;
+            max-width: 35%;
+        }
+        .right-column iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+
+        /* Navigation buttons inside content area */
+        .nav-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin: 20px 0;
+        }
+        .btn-next {
+            background: #FFF;
+            color: #000066;
+            padding: 10px 25px;
+            border-radius: 30px;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .btn-next:hover {
+            background: #ADD8E6;
+        }
+        .btn-next.disabled {
+            background: #888;
+            pointer-events: none;
+        }
+
+        /* Index page styling */
+        .index-content {
+            padding: 40px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .index-content p {
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+        .index-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin: 20px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .content { flex-direction: column; }
+            .left-column, .right-column { flex: 1; max-width: 100%; }
+            .banner { flex-direction: column; align-items: stretch; }
+            .banner-right { justify-content: center; margin-top: 10px; }
+        }
+    </style>
+</head>
+<body>
+    {% block banner %}
+    <header class="banner">
+        <div class="banner-left">
+            <!-- Inline SVG logo -->
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="45" fill="#ADD8E6" stroke="#000066" stroke-width="4"/>
+                <text x="50" y="68" font-size="50" text-anchor="middle" fill="#000066" font-family="Arial, sans-serif">AI</text>
+                <circle cx="30" cy="40" r="8" fill="#000066"/>
+                <circle cx="70" cy="40" r="8" fill="#000066"/>
+                <path d="M35 65 Q50 75 65 65" stroke="#000066" stroke-width="4" fill="none"/>
+            </svg>
+            <span class="banner-title">AI Search</span>
+        </div>
+        <div class="banner-right">
+            {% if show_search %}
+            <form method="get" action="{% url 'search' %}" target="search-iframe">
+                <input type="text" name="q" placeholder="Search..." value="{{ request.GET.q|default:'' }}">
+                <button type="submit">Search</button>
+            </form>
+            <select onchange="location = this.value;">
+                <option value="">Jump to...</option>
+                {% for ch in chapters_range %}
+                <option value="{% url 'chapter' ch %}" {% if ch == chapter_id %}selected{% endif %}>Chapter {{ ch }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+        </div>
+    </header>
+    {% endblock %}
+
+    <main>
+        {% block content %}
+        <!-- to be overridden -->
+        {% endblock %}
+    </main>
+</body>
+</html>

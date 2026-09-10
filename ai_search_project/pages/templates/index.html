@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block banner %}
+    <!-- Override banner without search/dropdown -->
+    <header class="banner">
+        <div class="banner-left">
+            
+            {% block svg %}
+              {{ block.super }}
+            {% endblock svg %} 
+            <span class="banner-title"><a href="/">AI Powered Search</a></span>
+        </div>
+        <!-- No search or dropdown on index -->
+    </header>
+{% endblock banner%}
+
+{% block content %}
+
+<div class="index-content">
+
+    <div class="index-buttons" style="justify-content: flex-end; margin-top: 30px;">
+        <a href="{% url 'chapter' 5 %}" class="btn-next">Let's Begin</a>
+    </div>
+    <h1>Welcome to AI Search</h1>
+
+    {% load static %}
+   <video width="640" height="360"  controls>
+        <source src="{% static 'audio/' %}AI-Powered_Search.mp4" type="video/mp4" >
+        Your browser does not support the audio element.
+    </video>     
+    <h2>AI-Powered Search by Trey Grainger, Doug Turnbull, and Max Irwin</h2>
+    <p>This excerpt from AI-Powered Search by Trey Grainger, Doug Turnbull, and Max Irwin explores the construction of intelligent information retrieval systems that evolve through automated learning.</p>
+    <p>The text emphasizes a shift from manual relevance tuning to self-learning platforms that integrate content, user, and domain understanding to better interpret intent. Key technical pillars include semantic search using dense vector embeddings, large language models (LLMs) for question answering, and retrieval augmented generation (RAG). </p>
+    <p>The authors highlight reflected intelligence as a central concept, where continuous feedback loops and user signals—such as clicks and purchases—are used to refine ranking via learning to rank models. Ultimately, the sources provide a roadmap for architecting search engines that are contextual, personalized, and multi-modal.</p>
+
+    <p>We have 15 chapters of content. Use the search box on each chapter page to find specific information.</p>
+
+
+  <h1>AI-Powered Search Engine Architecture</h1>
+
+  <p>An AI-powered search engine is an end-to-end system designed for continuous learning. Rather than operating as a static platform, it continuously processes two primary streams of data—content and user signals—and reflects that learned intelligence back into future searches through a series of feedback loops.</p>
+
+  <p>A complete AI-powered search architecture is typically organized around five core components:</p>
+
+  <h2>1. The Core Search Engine Foundation</h2>
+
+  <p>At the base of the architecture sits a scalable search engine or vector database (such as Apache Solr, OpenSearch, Elasticsearch, or Vespa). It is responsible for the baseline information retrieval processes:</p>
+
+  <ul>
+    <li><strong>Indexing &amp; Storage:</strong> Ingesting raw content and organizing it into highly optimized search data structures. This includes the inverted index (used for lexical keyword matching by mapping terms to document posting lists) and the forward index (used for generating facets and metadata aggregations).</li>
+    <li><strong>Matching &amp; Initial Ranking:</strong> Filtering the corpus to a logical subset of matching documents and calculating baseline relevancy scores (using classic statistical algorithms like BM25 or TF-IDF).</li>
+  </ul>
+  <br><hr>
+  <h2>2. The Index-Time Pipeline (Content Enrichment)</h2>
+
+  <p>Before document content is stored in the core index, it passes through an index-time pipeline that applies machine learning and natural language processing (NLP) to enrich and structure unstructured data. Key transformations include:</p>
+
+  <ul>
+    <li><strong>Generating Semantic Embeddings:</strong> Running document text through a Large Language Model (LLM) or Transformer to compute dense vector embeddings that represent the core conceptual meaning of the content.</li>
+    <li><strong>Entity Resolution &amp; Extraction:</strong> Finding and isolating domain-specific entities, nouns, and verbs.</li>
+    <li><strong>Document Classification &amp; Clustering:</strong> Automatically tagging documents with predicted categories or clustering them into thematic groups using models like K-Means.</li>
+    <li><strong>Linguistic Parsing:</strong> Performing part-of-speech (POS) detection, phrase annotation, and extracting semantic relationships (such as RDF subject-relationship-object triples) into an explicit knowledge graph.</li>
+  </ul>
+  <hr>
+  <h2>3. The Query-Time Pipeline (Query Interpretation &amp; Retrieval)</h2>
+
+  <p>When a user types a query, the query-time pipeline acts as a modular workflow to interpret user intent before matching results. It executes across four primary phases:
+
+  <br><image src="{% static 'images/user_intent.png'%}" width="650px" border="1px solid black">
+  </p>
+
+
+  <ul>
+    <li><strong>Parsing:</strong> Extracting phrases, locations, and entities from the query to search for "things, not strings". Highly efficient data structures like Finite State Transducers (FSTs) are often used here to execute entity extraction in milliseconds.</li>
+    <li><strong>Enrichment:</strong> Expanding and contextualizing the query. This can involve traversing a Semantic Knowledge Graph (SKG) to dynamically inject conceptually related synonyms, evaluating dynamic semantic functions (like geolocation proximity or real-time document ratings), and retrieving personalized user profiles.</li>
+    <li><strong>Transformation:</strong> Translating the enriched query tree into highly optimized, engine-specific query syntax.</li>
+    <li><strong>Searched-Result Reranking:</strong> Because complex machine-learning models are too slow to run against millions of documents, the search engine first executes a fast retrieval pass (e.g., BM25 or ANN vector search) to fetch the top-N candidate documents, then reranks them using an LTR (Learning to Rank) classifier or deep-learning cross-encoders.</li>
+    <li><strong>Generative Synthesis:</strong> Passing retrieved contexts alongside the query to an LLM (using Retrieval Augmented Generation / RAG) to output direct extracted answers, summarize the search results, or generate conversational responses.</li>
+  </ul>
+  <br><hr>
+  <h2>4. User Signals Collection Framework</h2>
+
+  <p>To enable the platform to self-tune, the architecture requires a dedicated ingestion mechanism to capture real-time user behavior.</p>
+
+  <ul>
+    <li><strong>Capturing Digital Moments:</strong> This framework tracks explicit user actions (such as searches, clicks, add-to-carts, purchases, likes, and dwell time).</li>
+    <li><strong>Contextual Correlation:</strong> Every captured interaction is bound to a persistent browser or session ID and traced directly back to the unique query_id of the original search. This mapping ensures developers can model exactly how users reacted to the specific list of results they were shown.</li>
+  </ul>
+  <br><hr>
+  <h2>5. Offline Machine Learning &amp; Analytics Engine</h2>
+
+  <p>Because search queries must execute in milliseconds, training complex models directly on the live query path is infeasible. Instead, a distributed processing framework (such as Apache Spark) runs offline background jobs to analyze user signals and content. It outputs the core relevance models that are periodically deployed to production:
+
+ <br><br><image src="{% static 'images/ml_ai.png'%}" width="650px" border="1px solid black"><br>
+  </p>
+
+  <ul>
+    <li><strong>Popularized Relevance (Signals Boosting):</strong> Aggregates query-to-document signal counts to boost highly clicked items for the engine's most popular queries.</li>
+    <li><strong>Personalized Relevance (Collaborative Filtering):</strong> Models latent user and item features (using matrix factorization or ALS) to generate personalized category boosts and product recommendations.</li>
+    <li><strong>Generalized Relevance (Learning to Rank):</strong> Uses click models (like Simplified Dynamic Bayesian Networks/SDBN) to automatically generate confidence-adjusted relevance judgment lists from raw clickstreams to train generalizable ranking classifiers.</li>
+    <li><strong>Unsupervised Knowledge Graph Learning:</strong> Automatically crawls content associations to discover domain-specific synonyms and alternative spellings without manual dictionary maintenance.</li>
+  </ul>
+
+  <p class="closing">Would you like to explore how we can configure a specific component of this architecture, such as setting up a click model or personalizing search results using collaborative filtering?</p>
+
+
+    <div class="index-buttons" style="justify-content: flex-end; margin-top: 30px;">
+        <a href="{% url 'chapter' 5 %}" class="btn-next">Let's Begin</a>
+    </div>
+    
+</div>
+{% endblock %}
