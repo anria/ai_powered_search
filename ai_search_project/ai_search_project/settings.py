@@ -63,4 +63,11 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'pages' / 'static']
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Solr configuration
+SOLR_URL = 'http://localhost:8983/solr/ai_search/query'
+SOLR_ROWS = 5
+
+# Product dataset
+PRODUCT_DATA_FILE = 'data/product.csv'
+
 
