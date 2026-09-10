@@ -1,4 +1,4 @@
-name: docker-project 
+name: django-main 
 
 services: 
   app:
@@ -11,3 +11,10 @@ services:
       - "8000:8000"
     volumes: 
       - .:/app
+
+    environment:
+      - SOLR_URL=http://localhost:8983/solr/ai_search
+
+networks:
+  app-net:
+    driver: bridge
