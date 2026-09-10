@@ -20,7 +20,11 @@ ai_search_project/
 │   └── static/
 │       └── pages/
 │           └── logo.svg
-├── data/                   ← put your JSON files here
+├── data/       ← put your JSON/CSV files here
 │   ├── chapters.json
-│   └── other_data.json
+│   ├── chapters_original.json
+│   ├── label.csv
+│   ├── query.csv
+│   ├── product.csv
+│   └── product.json
 └── manage.py
