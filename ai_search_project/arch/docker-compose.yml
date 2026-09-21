@@ -1,0 +1,25 @@
+name: django-main 
+
+services: 
+  app:
+    build:
+      context: .
+      dockerfile: dockerfile
+    image: django-image
+    container_name: django-container
+    ports:
+      - "8000:8000"
+    volumes: 
+      - .:/app
+
+    environment:
+      - SOLR_URL=http://solr-main:8983/solr
+    networks:
+      - solr_network
+
+
+networks:
+  app:
+    driver: bridge
+  solr_network:
+    driver: bridge    

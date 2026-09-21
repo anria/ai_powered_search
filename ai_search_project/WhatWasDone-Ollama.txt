@@ -1,0 +1,46 @@
+WHAT WAS DONE
+=======================================
+https://docs.docker.com/ai/model-runner/get-started/
+
+
+1. Download Ollama - 
+https://ollama.com/download/mac
+2. Legal models - 
+https://ollama.com/FableForge-AI/nexus-legal
+3. https://www.youtube.com/watch?v=km5-0jhv0JI - Run Ollama models on docker
+4. Run Ollama otherwise - https://www.youtube.com/watch?v=GAyNvq6Ayps&t=775s
+	> ollama pull FableForge-AI/nexus-legal
+	> ollama run FableForge-AI/nexus-legal
+
+5. if you can figure out how to make docker run it, use this. 
+	docker model run FableForge-AI/nexus-legal
+    Enable Docker Model Runner via the CLI → docker desktop enable model-runner
+    Enable Docker Model Runner via the GUI → Go to Settings->AI->Enable Docker Model Runner
+
+    127.0.0.1:12434
+
+   docker model run FableForge-AI/nexus-legal
+Unable to find model 'FableForge-AI/nexus-legal' locally. Pulling from the server.
+Failed to pull model: pulling FableForge-AI/nexus-legal failed with status 500 Internal Server Error: error while pulling model: reading model from registry: failed to pull model "fableforge-ai/nexus-legal:latest": UNKNOWN - resolving docker.io/fableforge-ai/nexus-legal:latest: pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+
+6. https://ollama.com/FableForge-AI/nexus-legal
+
+	a. Install Ollama
+	b. ollama pull FableForge-AI/nexus-legal
+	c. /Users/anria/.ollama/models/manifests/registry.ollama.ai/FableForge-AI/nexus-legal/latest
+	d. ollama run FableForge-AI/nexus-legal
+	e. >>> 
+
+	f. ollama pull FableForge-AI/nexus-legal
+		for PHONES: ollama pull FableForge-AI/nexus-legal:iq2_xxs
+	g. ollama pull FableForge-AI/nexus-coder
+	h. ollama pull FableForge-AI/nexus-security:iq2_xxs
+	i. ollama pull FableForge-AI/nexus-medical
+	j. ollama pull FableForge-AI/nexus-science
+
+
+
+
+
+
+
