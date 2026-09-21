@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<div class="content">
+    <div class="left-column">
+        <!-- nav buttons --> 
+        {% comment %} {{ content|safe }} {% endcomment %}
+
+
+    <h1>Chapter {{content.chapter}}: {{content.title}}</h1>
+    <!-- The controls attribute adds play, pause, and volume 
+ --> 
+    {% load static %}
+   <audio controls>
+        <source src="{% static 'audio/chapter' %}{{content.chapter}}.m4a" type="audio/mp4">
+        Your browser does not support the audio element.
+    </audio>  
+    
+
+
+    {% if content.summary %} <p>{{ content.summary }}</p>{% endif %}
+
+    
+    {% if content.chapter == 5 %}
+    <BR>
+    <h3><a href="https://www.youtube.com/watch?v=JvuQX92zyi0" target="_blank">Trey Granger on SKG's - Youtube</a></h3>
+
+    <h5><a href="https://www.slideshare.net/slideshow/the-apache-solr-semantic-knowledge-graph/121880632" target="_blank">Trey Granger on SKG's - Slides</a></h5>
+    <BR>
+    
+    {% endif %}
+
+    <br><image src="{% static 'images/chapter'%}{{content.chapter}}.png" width="650px"  border="1px solid black"><br>
+  
+
+    {% for section in content.sections %}
+        <h2>{{ section.title }}</h2>
+        {% if section.description %}<p> {{ section.description }} </p>{% endif %}
+
+        {% if section.items|length > 0 %}
+            <p>
+                <ul>
+                    {% for item in section.items %}
+                    {% if item.name %}
+
+                    <li><strong>{{ item.name }}:</strong> {{ item.description }}</li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </p>
+        {% endif %}
+
+
+        {% if section.use_cases|length > 0 %}
+            <h3>Use Cases</h3>
+            <p> 
+               <ul>
+                    {% for item in section.use_cases %}
+                    {% if item.name %}
+                    <li><strong>{{ item.name }}:</strong> {{ item.description }}</li>
+                    {% endif %}
+                    
+                    {% endfor %}
+                </ul>
+            </p>
+
+        {% endif %}
+    {% endfor %}
+
+    {% if content.key_phases|length >= 1 %}
+    {% for section in content.key_phases %}
+        <h3>{% if section.step %} Step {{ section.step }}: {% endif %} {{ section.name }}</h3>
+        {% if section.description %}<p> {{ section.description }} </p>{% endif %}
+
+    {% empty %}
+    &nbsp;
+    {% endfor %}
+    {% endif %}   
+
+    {% if content.chapter == 5 %}
+        <br>
+        <image src="{% static 'images/chapter'%}5_1.png" width="650px"  border="1px solid black"><br>
+        <image src="{% static 'images/chapter'%}5_2.png" width="650px"  border="1px solid black">
+    {% endif %} 
+        </div>
+
+        <div class="right-column">
+             <!--<iframe name="search-iframe" src="{% url 'search' %}?q={{ request.GET.q|default:'*:*' }}" 
+                    frameborder="0"></iframe>
+            <iframe name="search-iframe" src="{% url 'search' %}?q={{ request.GET.q|default:'*:*' }}" 
+            frameborder="0"></iframe>-->
+            <iframe name="search-iframe" src="{% url 'search' %}?q={{ request.GET.q|default:'' }}&chapter_id={{ content.chapter }}" 
+                    frameborder="0"></iframe> 
+        </div>
+    </div>
+
+{% endblock %}
