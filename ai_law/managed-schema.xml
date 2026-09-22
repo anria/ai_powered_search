@@ -183,8 +183,22 @@
   <field name="case_text" type="text_en" multiValued="false" indexed="true" stored="true" />
 
   <copyField source="court_name" dest="_text_"/>
-  <copyField source="docket_number" dest="_text_" maxChars="256"/>
-  <copyField source="state" dest="_text_" maxChars="256" />
+  <copyField source="docket_number" dest="_text_" />
+  <copyField source="state" dest="_text_"  />
+
+  <fieldType name="dense_vector_field_type" 
+             class="solr.DenseVectorField"
+             vectorDimension="384"
+             similarityFunction="cosine"
+             knnAlgorithm="hnsw"/>
+
+  <field name="dv_summary" type="dense_vector_field_type" indexed="true" stored="true"/>
+  <field name="dv_judge_ruling" type="dense_vector_field_type" indexed="true" stored="true"/>
+  <field name="dv_general_text" type="dense_vector_field_type" indexed="true" stored="true"/>
+
+  <field name="summary" type="text_general" multiValued="false" indexed="true" stored="true" />
+  <field name="judge_ruling" type="text_general" multiValued="false" indexed="true" stored="true" />
+
 
 
     <uniqueKey>id</uniqueKey>
