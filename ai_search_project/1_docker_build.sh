@@ -1,10 +1,28 @@
-docker build -t django-image .
+#docker compose -f docker.yaml up -d --build 
 
-# -t = tag, the name tag of your container
-# last . to specify dockerfile in current directory
+echo "Done with Dockers. Run Solr setups"
 
-# ask docker AI Gordon for help
-# docker ai "help me fix this build failure"
+echo "CD .. "
+cd ..
+sleep 3
+echo "Load Solr Configs"
+sh _load_config_ai_law.sh
 
-# check docker build progress
-# docker buildx build --progress=plain
+sleep 2
+echo "Index Solr Data"
+sh _index_ai_law.sh
+
+echo "Ollama pull qwen3-embedding:0.6b"
+# curl -X POST  "http://localhost:11434/api/pull" -H "Content-Type: application/json" -d '{"model": "qwen3-embedding:0.6b"}'
+docker exec -it ollama-main ollama pull qwen3-embedding:0.6b
+docker exec -it ollama-main ollama pull FableForge-AI/nexus-legal
+
+
+echo "cd ai_search_project"
+cd ai_search_project
+
+echo "______ DONE ______"
+# Exit with success (Standard convention)
+exit 0
+
+

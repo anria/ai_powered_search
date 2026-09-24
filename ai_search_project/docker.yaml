@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: dockerfile
-    image: django-image
+    # image: django-image
     ports:
       - "8000:8000"
     volumes: 
@@ -14,6 +14,7 @@ services:
 
     networks:
       - solr_network
+      - ollama_network
 
     environment:
       - SOLR_URL=http://solr:8983/solr 
@@ -48,18 +49,62 @@ services:
       ZK_HOST: "zookeeper:2181"
     volumes:
       - solr_data:/var/solr
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://10.4.0.5:8983/solr/admin/info/system"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
     depends_on:
       - zookeeper
     networks:
-      - solr_network
+      solr_network:
+        ipv4_address: 10.4.0.5  # <-- Assign your static IP here
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-main
+    hostname: ollama
+ 
+    ports:
+      # Expose Ollama API on host port 11434
+      - "11434:11434"
+    volumes:
+      # Persist models between container restarts
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    # Health check to ensure Ollama is responding
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      ollama_network:
+        ipv4_address: 10.5.0.5  # <-- Assign your static IP here
+  
+
+# Named volumes for model/data persistence
 volumes:
   zookeeper_data:
   zookeeper_datalog:
   solr_data:
+  ollama_data:
+
 
 networks:
   solr_network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 10.4.0.0/16   # <-- Define the subnet range
+  ollama_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16   # <-- Define the subnet range
+
+
   
