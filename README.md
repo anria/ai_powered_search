@@ -32,5 +32,9 @@ The Dev Plan is laid out in stages.
 1. Add OpenAI agents for the searching
 2. Add chatbot to improve search experience
 
+# Installation
+1. call ai_search_project/1_docker_build.sh
+2. wait for it to finish - it takes a few minutes
+3. http://localhost:8000/
 
 
