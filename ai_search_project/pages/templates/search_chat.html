@@ -15,30 +15,21 @@
     </style>
 </head>
 <body>
-    <h3>Search Results - Chapter {{ chapter_id }}</h3>
-            <form method="get" action="{% url 'search' %}" >
-                <input type="text" name="q" placeholder="Search..." value="{{ request.GET.q|default:'' }}"> 
-                <!-- <input type="text" name="q" placeholder="Search..." value=""> -->
-                <button type="submit" >Search</button>
-                
-                <input type="hidden" name="chapter_id" value="{{ request.GET.chapter_id|default:chapter_id }}">
-            </form>
+    <h3>Search AI Chat - Chapter {{ chapter_id }}</h3>
+
                        
     {% autoescape off %}
     {% if error %}
         <p class="error">{{ error }}</p>
     {% elif query %}
         
-        <p>Showing {{ results|length }} of {{ num_found }} match{{ num_found|pluralize }} for "<strong>{{ query }}</strong>" - Query took {{ qTime }}ms</p>
         {% if results %}
             <ul>
                 {% for r in results %}
                     <li>
                         <div class="title">{{ r.title }}</div>
                         {% if r.snippet %}<div class="snippet">{{ r.snippet }}</div>{% endif %}
-                        {% if r.id %}<div class="meta"><b>id:</b> {{ r.id }}</div>{% endif %}
-                        {% if r.score %}<div class="meta"><b>Score:</b> {{ r.score }}</div>{% endif %}
-                        {% if r.hl|safe %}<div class="meta"><br> {{ r.hl }}</div>{% endif %}
+                        
                         
                     </li>
                 {% endfor %}
@@ -49,10 +40,17 @@
         {% else %}
             <p class="no-results">No products matched "{{ query }}".</p>
         {% endif %}
-    {% else %}
-        <p class="no-results">Enter a search term above to search the product catalogue.</p>
 
     {% endif %}
     {% endautoescape %}
+
+
+        <form method="get" action="{% url 'search' %}" >
+            <textarea type="text" name="q" placeholder="Search..." value="{{ request.GET.q|default:'' }}">Talk to the AI Legal Assistant</textarea>
+            <!-- <input type="text" name="q" placeholder="Search..." value=""> -->
+            <button type="submit" >Search</button>
+            
+            <input type="hidden" name="chapter_id" value="{{ request.GET.chapter_id|default:chapter_id }}">
+        </form>    
 </body>
 </html>
