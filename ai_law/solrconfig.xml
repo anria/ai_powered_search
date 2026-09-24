@@ -701,9 +701,8 @@
      <lst name="appends">
           <!-- Query 1: The standard text match (BM25) 
           <str name="q">{!edismax qf=text_field v=$user_query}</str>-->
-          <!-- Query 2: The dense vector match (KNN) -->
-          <str name="q">{!knn f=dv_summary topK=20 v=$user_vector}</str>
-          <str name="q">{!knn f=dv_judge_ruling topK=20 v=$user_vector}</str>
+          <!-- Query 2: The dense vector match (KNN) 
+          <str name="q">{!knn f=dv_general_text topK=10}</str>-->
           
      </lst>
 
