@@ -8,8 +8,9 @@ from django.conf import settings
 from typing import Any, Optional
 
 import requests
-from django.shortcuts import render
-from django.conf import settings
+import numpy as np
+import time
+import orjson
 
 
 # Placeholder content for 15 chapters (you can replace with database models)
@@ -24,9 +25,14 @@ CHAPTERS = {
 }
 
 # ---- Solr-backed search ----
-SOLR_URL = getattr(settings, 'SOLR_URL', 'http://solr:8983/solr/ai_search/query')
-SOLR_ROWS = 5   # how many results to fetch
-print( "SOLR_URL", SOLR_URL )
+SOLR_URL = getattr(settings, 'SOLR_URL', 'http://10.4.0.5:8983/solr/ai_search/query')
+SOLR_ROWS = getattr(settings, 'SOLR_ROWS', 5)   # how many results to fetch
+# print( "_____ views.py --> SOLR_URL", SOLR_URL )
+
+OLLAMA_URL = getattr(settings, 'OLLAMA_URL', 'http://10.5.0.5:11434/api/embed')
+OLLAMA_EMBED_MODEL = getattr(settings, 'OLLAMA_EMBED_MODEL', 'qwen3-embedding:0.6b' )
+OLLAMA_CHATBOT_MODEL = getattr(settings, 'OLLAMA_CHATBOT_MODEL', 'FableForge-AI/nexus-legal' )
+
 
 def read_json_file(file_path: Union[str, Path], relative_to_base: bool = True) -> Any:
     """
@@ -104,22 +110,61 @@ def chapter(request, chapter_id):
     }
     return render(request, 'chapter.html', context)
 
+
+def get_embeddings(text_input, dimension):
+
+    embed_model = OLLAMA_EMBED_MODEL
+    payload = {
+        "model": embed_model,
+        "input": text_input,
+        "stream": 0
+    }
+
+    start = time.perf_counter()
+    response = requests.post(OLLAMA_URL, json=payload, timeout=3, headers={'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'})
+    
+    full_embedding = orjson.loads(response.content)
+    end = time.perf_counter()
+    
+    if "embeddings" in full_embedding:
+        truncated_vector = np.array(full_embedding["embeddings"][0][:dimension])
+        normalized_vector = truncated_vector / np.linalg.norm(truncated_vector)
+        full_embedding = normalized_vector
+    elif "error" in full_embedding:
+        print("_____ Embedding Error", full_embedding, flush=True)
+        full_embedding = []
+
+    return full_embedding.tolist()  
+
+
+
+
 def search(request):
     query = request.GET.get('q', '').strip()
     chapter_id = request.GET.get('chapter_id', '').strip()
+    print("_____ saerch --> chapter_id ", chapter_id)
     results = []
     error = None
     num_found = 0
     qTime = 0
+    chapter_reqHandlers = [7,13]
+    CHAPTER_SOLR_URL = SOLR_URL
+    if int(chapter_id) in chapter_reqHandlers:
+        CHAPTER_SOLR_URL = SOLR_URL.replace("query", "chapter" + chapter_id)
+    template = 'search_results.html'
 
     if query:
         params = {
             'q': query,
         }
 
-        #print("params", params)
+        if int(chapter_id) == 13:
+            vector = get_embeddings(query, 50)
+            if isinstance(vector, list) and len(vector) >=1 :
+                params["q"] = "{!knn f=dv_general_text topK=10}" + str(vector).replace(" ", "")
+
         try:
-            resp = requests.get(SOLR_URL, params=params, timeout=5)
+            resp = requests.get(CHAPTER_SOLR_URL, params=params, timeout=5)
             resp.raise_for_status()
             data = resp.json()
             qTime      = data.get('responseHeader', {}).get('QTime', 0)
@@ -128,11 +173,16 @@ def search(request):
             highlights = data.get('highlighting', {})
 
             for doc in solr_docs:
-
+                highlight = ""
+                if doc.get('id') in highlights:
+                    if 'text' in highlights.get(doc.get('id')):
+                        highlight += "<b>Text:</b> " + highlights.get(doc.get('id')).get('text')[0]
+                    if 'judge_ruling' in highlights.get(doc.get('id')):
+                        highlight += "<br><b>Judge_ruling:</b> " + highlights.get(doc.get('id')).get('judge_ruling')[0]
                 # Adjust these field names to match your Solr schema
                 results.append({
                     'id':  doc.get('docket_number'),
-                    'hl': highlights.get(doc.get('id')).get('text')[0],
+                    'hl': highlight,
                     'title': '<a href="'+ doc.get('url') + '" target="_blank">' + doc.get('title', doc.get('case_name', 'Untitled')) +'</a>',
                     'snippet':  '<b>Date:</b> ' + doc.get('case_date')[:10] + '<br><b>Court:</b> ' +  doc.get('court_name'),
                     'score':    doc.get('score'),
@@ -140,11 +190,11 @@ def search(request):
                     # 'chapter':  doc.get('chapter'),  # if you store a chapter number
                 })
         except requests.exceptions.RequestException as e:
-            error = f"Could not reach Solr at {SOLR_URL}: {e}"
+            error = f"Could not reach Solr at {CHAPTER_SOLR_URL}: {e}"
         except ValueError:
             error = "Solr returned a non-JSON response."
 
-    return render(request, 'search_results.html', {
+    return render(request, template, {
         'results':   results,
         'query':     query,
         'chapter_id': chapter_id,

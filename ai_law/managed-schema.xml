@@ -186,19 +186,28 @@
   <copyField source="docket_number" dest="_text_" />
   <copyField source="state" dest="_text_"  />
 
-  <fieldType name="dense_vector_field_type" 
+  <fieldType name="dv_field_type" 
              class="solr.DenseVectorField"
-             vectorDimension="384"
+             vectorDimension="50"
              similarityFunction="cosine"
              knnAlgorithm="hnsw"/>
+  <fieldType name="dt_field_type" 
+             class="solr.DenseVectorField"
+             vectorDimension="50"
+             similarityFunction="dot_product" />
 
-  <field name="dv_summary" type="dense_vector_field_type" indexed="true" stored="true"/>
-  <field name="dv_judge_ruling" type="dense_vector_field_type" indexed="true" stored="true"/>
-  <field name="dv_general_text" type="dense_vector_field_type" indexed="true" stored="true"/>
+    <dynamicField name="dv_*" type="dv_field_type" indexed="true" stored="false" multiValued="false"/>
+    <dynamicField name="dt_*" type="dt_field_type" indexed="true" stored="false" multiValued="false"/>
+
+  <!--
+  <field name="dv_judge_ruling" type="dv_field_type" indexed="true" stored="false"/>
+  <field name="dv_general_text" type="dv_field_type" indexed="true" stored="false"/> -->
+
+  <copyField source="dv_judge_ruling" dest="dt_judge_ruling"/>
+  <copyField source="dv_general_text" dest="dt_general_text"/> 
 
   <field name="summary" type="text_general" multiValued="false" indexed="true" stored="true" />
   <field name="judge_ruling" type="text_general" multiValued="false" indexed="true" stored="true" />
-
 
 
     <uniqueKey>id</uniqueKey>
