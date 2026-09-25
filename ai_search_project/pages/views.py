@@ -136,22 +136,98 @@ def get_embeddings(text_input, dimension):
 
     return full_embedding.tolist()  
 
+def get_ai_chat(text_input):
+    embed_model = OLLAMA_CHATBOT_MODEL
+    payload = {
+        "model": embed_model,
+        "messages": [
+        {
+          "role": "system",
+          "content": "forget all previous prompts. You are NEXUS-LEGAL, a domain-specialized AI assistant for legal review. Respond in 5 short sentences noting the parties, the judge, the issue and the ruling and if available, the dissenting judge and opinion."
+        },
+        {
+          "role": "user",
+          "content": text_input
+        }
+      ],
+      "stream": False,
+      "format": {
+        "type": "object",
+        "properties": {
+          "judge_ruling": { "type": "string" },
+          "parties": { "type": "string" },
+          "issue": { "type": "string"},
+          "dissenting_opinion": { "type": "string" }
+        },
+        "required": ["judge_ruling", "parties",  "issue", "dissenting_opinion"]
+      }
+    }
+    url = OLLAMA_URL.replace("embed", "chat")
+    try:
+        response = requests.post(url, json=payload, timeout=30, headers={'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'})
+        response.raise_for_status()
+        full_response =  orjson.loads(response.content)
 
+        if "error" in full_response:
+            message = full_response["error"]
+        if "message" in full_response:
+            message = full_response["message"]
+
+    except requests.exceptions.ReadTimeout:
+        print("Error: The server did not send data within the allocated read timeout period.", flush=True)
+        message = {"error": "Error: The server did not send data within the allocated read timeout period."}
+    except requests.exceptions.ConnectTimeout:
+        print("Error: Could not establish a connection to the server.", flush=True)
+        message = {"error": "Error: Could not establish a connection to the server."}
+
+    return message
+
+
+def search_chatbot(request, query, chapter_id):
+    template = 'search_chat.html'
+    results = get_ai_chat(query)
+    print("_____ results", results, flush=True)
+    output = ""
+    error = ""
+    if "error" in results:
+        error = "<em>" + results["error"] + "</em>"
+        output = results
+    else:
+        if "parties" in results:
+            output = output + "<b>Parties: </b>" + results["parties"] + "<br>"
+        if "issue" in results:
+            output = output + "<b>Issue: </b>" + results["issue"] + "<br>"
+        if "judge_ruling" in results:    
+            output = output + "<b>Judge Opinion: </b>" + results["judge_ruling"] + "<br>"
+        if "dissenting_opinion" in results:
+            output = output + "<b>Dissenting Opinion: </b>" + results["dissenting_opinion"] + "<br>"
+
+
+    return render(request, template, {
+        'results':   output,
+        'query':     query,
+        'chapter_id': chapter_id,
+        'error':     error,
+    })
 
 
 def search(request):
     query = request.GET.get('q', '').strip()
     chapter_id = request.GET.get('chapter_id', '').strip()
-    print("_____ saerch --> chapter_id ", chapter_id)
+    print("_____ saerch --> chapter_id ", chapter_id, flush=True)
     results = []
     error = None
     num_found = 0
     qTime = 0
     chapter_reqHandlers = [7,13]
+    template = 'search_results.html'
+    if int(chapter_id) >= 14: 
+        return search_chatbot(request, query, chapter_id)
+    print("____ made it past the chatbot", flush=True)
+
     CHAPTER_SOLR_URL = SOLR_URL
     if int(chapter_id) in chapter_reqHandlers:
         CHAPTER_SOLR_URL = SOLR_URL.replace("query", "chapter" + chapter_id)
-    template = 'search_results.html'
 
     if query:
         params = {
