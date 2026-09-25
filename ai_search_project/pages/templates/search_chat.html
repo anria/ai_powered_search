@@ -12,6 +12,30 @@
         .no-results, .error { color: #555; }
         .error { color: #b00020; }
         em { font-weight: bold; color: #b00020; }
+        textarea {
+            min-height: 50px;
+            max-height: 150px;
+            flex: 1;
+            padding: 13px 14px;
+            resize: none;
+            border: 1px solid #bfcfc3;
+            border-radius: 12px;
+            color: var(--ink);
+            background: var(--panel);
+            font: inherit;
+        }
+        button {
+            align-self: stretch;
+            min-width: 78px;
+            padding: 0 16px;
+            border: 1px solid black;
+            border-radius: 5px;
+            color: #fff;
+            background: #f9f9f9;
+            cursor: pointer;
+            font-weight: 700;
+        }        
+
     </style>
 </head>
 <body>
@@ -24,21 +48,12 @@
     {% elif query %}
         
         {% if results %}
-            <ul>
-                {% for r in results %}
-                    <li>
-                        <div class="title">{{ r.title }}</div>
-                        {% if r.snippet %}<div class="snippet">{{ r.snippet }}</div>{% endif %}
+ 
+            <div class="snippet">{{ results }}</div>
+            <br>
                         
-                        
-                    </li>
-                {% endfor %}
-            </ul>
-            {% if num_found > results|length %}
-                <p class="meta">Only the first {{ results|length }} results are shown.</p>
-            {% endif %}
         {% else %}
-            <p class="no-results">No products matched "{{ query }}".</p>
+            <p class="no-results">The Chatbot is being coy "{{ query }}".</p>
         {% endif %}
 
     {% endif %}
@@ -46,11 +61,30 @@
 
 
         <form method="get" action="{% url 'search' %}" >
-            <textarea type="text" name="q" placeholder="Search..." value="{{ request.GET.q|default:'' }}">Talk to the AI Legal Assistant</textarea>
-            <!-- <input type="text" name="q" placeholder="Search..." value=""> -->
-            <button type="submit" >Search</button>
+            <!-- <textarea type="text" name="q" placeholder="Talk to the AI Legal Assistant" value="{{ request.GET.q|default:'' }}"></textarea> --> 
+
+            <textarea type="text" name="q" id="text_query" autocapitalize="off" autocomplete="off" aria-autocomplete="inline" maxlength="8192" autofocus="true" placeholder="Ask the Legal Assistant Legal Questions" style="height: 24px;"></textarea>
+
+            <!-- <input type="text" name="q" placeholder="Search..." value=""> 
+            <button type="submit" >Search</button>-->
             
             <input type="hidden" name="chapter_id" value="{{ request.GET.chapter_id|default:chapter_id }}">
-        </form>    
+        </form> 
+
+        <script>
+          const textarea = document.getElementById('text_query');
+
+          textarea.addEventListener('keydown', function (event) {
+            // Check if Enter was pressed without the Shift key
+            if (event.key === 'Enter' && !event.shiftKey) {
+              // Prevent the default behavior (adding a new line)
+              event.preventDefault();
+              
+              // Submit the form programmatically
+              event.target.form.requestSubmit(); 
+            }
+          });
+        </script>   
 </body>
+
 </html>
