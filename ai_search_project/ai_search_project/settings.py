@@ -7,6 +7,7 @@ SECRET_KEY = 'django-insecure-...'  # generate your own
 DEBUG = True
 ALLOWED_HOSTS = []
 
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -63,4 +64,14 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'pages' / 'static']
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Solr configuration
+SOLR_URL = 'http://10.4.0.5:8983/solr/ai_law/query'
+SOLR_ROWS = 5
+# print( "_____ SETTTINSGS --> SOLR_URL", SOLR_URL )
+OLLAMA_URL = 'http://10.5.0.5:11434/api/embed'
+OLLAMA_EMBED_MODEL = 'qwen3-embedding:0.6b'
+OLLAMA_CHATBOT_MODEL = 'FableForge-AI/nexus-legal'
+
+# Product dataset
+PRODUCT_DATA_FILE = 'data/product.csv'
 
