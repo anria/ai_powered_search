@@ -1,0 +1,34 @@
+{% load static %}
+<!-- Chatbot popup -->
+<button id="chat-toggle" aria-label="Open chat">💬</button>
+
+<div id="chat-window" class="chat-hidden" role="dialog" aria-label="Chat">
+  <header class="chat-header">
+    <span>AI Search Assistant</span>
+    <button id="chat-close" aria-label="Close chat">×</button>
+  </header>
+
+  <div id="chat-messages" class="chat-messages">
+    <div class="chat-msg chat-bot">
+      Hi! Ask me about very recent judge opinions.
+    </div>
+  </div>
+
+  <form id="chat-form" class="chat-form" autocomplete="off">
+    <input id="chat-input" type="text" placeholder="Type a message…" maxlength="2000" required>
+    <button type="submit" id="chat-send">Send</button>
+  </form>
+</div>
+
+<!-- Pass Django settings into JS -->
+<script>
+  window.CHATBOT_CONFIG = {
+    ollamaHost:  "{{ CHATBOT_CONFIG.ollama_host|escapejs }}",
+    ollamaModel: "{{ CHATBOT_CONFIG.ollama_model|escapejs }}",
+    chatEndpoint: "{{ CHATBOT_CONFIG.chat_endpoint|escapejs }}"
+    timeoutMs:    "{{ CHATBOT_CONFIG.timeout_ms|default:180000 }}"
+  };
+</script>
+
+<link rel="stylesheet" href="{% static 'chatbot.css' %}">
+<script src="{% static 'chatbot.js' %}" defer></script>

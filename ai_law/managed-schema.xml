@@ -188,16 +188,16 @@
 
   <fieldType name="dv_field_type" 
              class="solr.DenseVectorField"
-             vectorDimension="50"
+             vectorDimension="384"
              similarityFunction="cosine"
              knnAlgorithm="hnsw"/>
   <fieldType name="dt_field_type" 
              class="solr.DenseVectorField"
-             vectorDimension="50"
+             vectorDimension="384"
              similarityFunction="dot_product" />
 
-    <dynamicField name="dv_*" type="dv_field_type" indexed="true" stored="false" multiValued="false"/>
-    <dynamicField name="dt_*" type="dt_field_type" indexed="true" stored="false" multiValued="false"/>
+    <dynamicField name="dv_*" type="dv_field_type" indexed="true" stored="true" multiValued="false"/>
+    <dynamicField name="dt_*" type="dt_field_type" indexed="true" stored="true" multiValued="false"/>
 
   <!--
   <field name="dv_judge_ruling" type="dv_field_type" indexed="true" stored="false"/>
@@ -205,6 +205,7 @@
 
   <copyField source="dv_judge_ruling" dest="dt_judge_ruling"/>
   <copyField source="dv_general_text" dest="dt_general_text"/> 
+  <copyField source="dv_case_text" dest="dt_case_text"/> 
 
   <field name="summary" type="text_general" multiValued="false" indexed="true" stored="true" />
   <field name="judge_ruling" type="text_general" multiValued="false" indexed="true" stored="true" />
