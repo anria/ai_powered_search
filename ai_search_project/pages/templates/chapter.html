@@ -2,7 +2,9 @@
 
 
 {% block content %}
+{% include 'chatbot.html' %}
 <div class="content">
+
     <div class="left-column">
         <!-- nav buttons --> 
         {% comment %} {{ content|safe }} {% endcomment %}
@@ -94,5 +96,6 @@
                     frameborder="0"></iframe> 
         </div>
     </div>
+
 
 {% endblock %}
