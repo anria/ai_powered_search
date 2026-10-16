@@ -9,18 +9,29 @@ ai_search_project/
 │   ├── __init__.py
 │   ├── admin.py
 │   ├── apps.py
-│   ├── models.py          (optional – we'll use a list)
-│   ├── views.py
+│   ├── models.py       (optional – we'll use a list)
+│   ├── views.py		# add `chat` view
 │   ├── urls.py
+│	├── chatbot.py      # backend logic (LLM call)
+│	├── context_processors.py  # to send configs to the chatbot popup
 │   ├── templates/
 │   │   ├── base.html
 │   │   ├── index.html
 │   │   ├── chapter.html
-│   │   └── search_results.html
+│   │   ├── search_results.html
+│	│   └── chatbot.html               # the widget markup
+│	│
 │   └── static/
 │       └── pages/
-│           └── logo.svg
-├── data/                   ← put your JSON files here
+│           ├── logo.svg
+│	 		├── chatbot.css
+│		    └── chatbot.js
+│
+├── data/       ← put your JSON/CSV files here
 │   ├── chapters.json
-│   └── other_data.json
+│   ├── chapters_original.json
+│   ├── label.csv
+│   ├── query.csv
+│   ├── product.csv
+│   └── product.json
 └── manage.py

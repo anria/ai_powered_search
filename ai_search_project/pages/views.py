@@ -1,5 +1,11 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
+from django.shortcuts import render
+from django.conf import settings
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST
 
 import json
 from pathlib import Path
@@ -7,11 +13,15 @@ from typing import Any, Union
 from django.conf import settings
 from typing import Any, Optional
 
+
 import requests
 import numpy as np
 import time
 import orjson
+import ollama
+from ollama import Client 
 
+from .chatbot import get_reply
 
 # Placeholder content for 15 chapters (you can replace with database models)
 # usage: 'content': CHAPTERS[chapter_id],
@@ -29,8 +39,8 @@ SOLR_URL = getattr(settings, 'SOLR_URL', 'http://10.4.0.5:8983/solr/ai_search/qu
 SOLR_ROWS = getattr(settings, 'SOLR_ROWS', 5)   # how many results to fetch
 # print( "_____ views.py --> SOLR_URL", SOLR_URL )
 
-OLLAMA_URL = getattr(settings, 'OLLAMA_URL', 'http://10.5.0.5:11434/api/embed')
-OLLAMA_EMBED_MODEL = getattr(settings, 'OLLAMA_EMBED_MODEL', 'qwen3-embedding:0.6b' )
+OLLAMA_URL = getattr(settings, 'OLLAMA_URL', 'http://localhost:11434/api/embed')
+OLLAMA_EMBED_MODEL = getattr(settings, 'OLLAMA_EMBED_MODEL', 'hf.co/ggml-org/e5-small-v2-Q8_0-GGUF:Q8_0' )
 OLLAMA_CHATBOT_MODEL = getattr(settings, 'OLLAMA_CHATBOT_MODEL', 'FableForge-AI/nexus-legal' )
 
 
@@ -112,7 +122,7 @@ def chapter(request, chapter_id):
 
 
 def get_embeddings(text_input, dimension):
-
+    print("______ Ollama ", OLLAMA_URL, " \nMODEL ", OLLAMA_EMBED_MODEL, flush=True) 
     embed_model = OLLAMA_EMBED_MODEL
     payload = {
         "model": embed_model,
@@ -278,3 +288,35 @@ def search(request):
         'qTime': qTime,
         'num_found': num_found,
     })
+
+
+
+@require_POST
+@csrf_protect
+def chat(request):
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    messages = body.get("messages", [])
+    if not isinstance(messages, list) or not messages:
+        return JsonResponse({"error": "messages must be a non-empty list"}, status=400)
+
+    # Basic sanitisation: each item must be a dict with role + content strings
+    clean = []
+    for m in messages[-12:]:
+        if (isinstance(m, dict)
+                and m.get("role") in ("user", "assistant")
+                and isinstance(m.get("content"), str)):
+            clean.append({"role": m["role"], "content": m["content"][:4000]})
+
+    if not clean:
+        return JsonResponse({"error": "No valid messages"}, status=400)
+
+    try:
+        reply = get_reply(clean)
+    except Exception as e:
+        return JsonResponse({"error": f"Server error: {e}"}, status=500)
+
+    return JsonResponse({"reply": reply})    
