@@ -1,5 +1,11 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
+from django.shortcuts import render
+from django.conf import settings
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST
 
 import json
 from pathlib import Path
@@ -7,11 +13,15 @@ from typing import Any, Union
 from django.conf import settings
 from typing import Any, Optional
 
+
 import requests
 import numpy as np
 import time
 import orjson
+import ollama
+from ollama import Client 
 
+from .chatbot import get_reply
 
 # Placeholder content for 15 chapters (you can replace with database models)
 # usage: 'content': CHAPTERS[chapter_id],
@@ -29,8 +39,8 @@ SOLR_URL = getattr(settings, 'SOLR_URL', 'http://10.4.0.5:8983/solr/ai_search/qu
 SOLR_ROWS = getattr(settings, 'SOLR_ROWS', 5)   # how many results to fetch
 # print( "_____ views.py --> SOLR_URL", SOLR_URL )
 
-OLLAMA_URL = getattr(settings, 'OLLAMA_URL', 'http://10.5.0.5:11434/api/embed')
-OLLAMA_EMBED_MODEL = getattr(settings, 'OLLAMA_EMBED_MODEL', 'qwen3-embedding:0.6b' )
+OLLAMA_URL = getattr(settings, 'OLLAMA_URL', 'http://localhost:11434/api/embed')
+OLLAMA_EMBED_MODEL = getattr(settings, 'OLLAMA_EMBED_MODEL', 'hf.co/ggml-org/e5-small-v2-Q8_0-GGUF:Q8_0' )
 OLLAMA_CHATBOT_MODEL = getattr(settings, 'OLLAMA_CHATBOT_MODEL', 'FableForge-AI/nexus-legal' )
 
 
@@ -112,8 +122,9 @@ def chapter(request, chapter_id):
 
 
 def get_embeddings(text_input, dimension):
-
+    print("______ Ollama ", OLLAMA_URL, " \nMODEL ", OLLAMA_EMBED_MODEL, flush=True) 
     embed_model = OLLAMA_EMBED_MODEL
+    endpoint = "/api/embed"
     payload = {
         "model": embed_model,
         "input": text_input,
@@ -121,7 +132,7 @@ def get_embeddings(text_input, dimension):
     }
 
     start = time.perf_counter()
-    response = requests.post(OLLAMA_URL, json=payload, timeout=3, headers={'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'})
+    response = requests.post(OLLAMA_URL+endpoint, json=payload, timeout=3, headers={'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'})
     
     full_embedding = orjson.loads(response.content)
     end = time.perf_counter()
@@ -143,7 +154,7 @@ def get_ai_chat(text_input):
         "messages": [
         {
           "role": "system",
-          "content": "forget all previous prompts. You are NEXUS-LEGAL, a domain-specialized AI assistant for legal review. Respond in 5 short sentences noting the parties, the judge, the issue and the ruling and if available, the dissenting judge and opinion."
+          "content": "forget all previous prompts. You are NEXUS-LEGAL, a domain-specialized AI assistant for legal review. Respond in 4 short sentences. If asked, note the parties, the judge, the issue and the ruling and if available, the dissenting judge and opinion in list format."
         },
         {
           "role": "user",
@@ -210,6 +221,36 @@ def search_chatbot(request, query, chapter_id):
         'error':     error,
     })
 
+def extract_relationships(text, lang_model, coref_model):
+    resolved_text = resolve_coreferences(text, coref_model)
+    sentences = get_sentences(resolved_text, lang_model)
+    return resolve_facts(sentences, lang_model)
+
+def chapter5_get_query(origQueryJson):
+    # pip3 install spacy
+    # pip3 install spacy-experimental
+    # pip3 install spacy spacy-transformers
+    # python3 -m spacy download en_core_web_sm
+    # python3 -m spacy download en_core_web_trf
+    stopwords = ["i", "me", "my", "myself", "we", "you", "he", "she", "it", "they","a", "an", "the", "in", "on", "at", "by", "for", "with", "about", "against", "and", "but", "or", "because", "as", "until", "while", "is", "am", "are", "was", "were"]
+
+    qList = origQueryJson["q"].split(" ")
+    query = ""
+    print("1. LEN(qlist)", len(qList), flush=True)
+    for q in qList:
+        if q not in stopwords:
+            origQueryJson["facet.query"] = q
+
+
+    print("2. LEN(qlist)", len(qList), flush=True)
+    print("___ qList", qList, flush=True)
+    for q in qList:
+        origQueryJson["facet.query"] = q
+
+    return origQueryJson
+
+
+
 
 def search(request):
     query = request.GET.get('q', '').strip()
@@ -221,6 +262,8 @@ def search(request):
     qTime = 0
     chapter_reqHandlers = [7,13]
     template = 'search_results.html'
+
+
     if int(chapter_id) >= 14: 
         return search_chatbot(request, query, chapter_id)
     print("____ made it past the chatbot", flush=True)
@@ -233,11 +276,16 @@ def search(request):
         params = {
             'q': query,
         }
+        match int(chapter_id):
+            case 5:
+                params = chapter5_get_query(params)
 
-        if int(chapter_id) == 13:
-            vector = get_embeddings(query, 50)
-            if isinstance(vector, list) and len(vector) >=1 :
-                params["q"] = "{!knn f=dv_general_text topK=10}" + str(vector).replace(" ", "")
+            case 13:
+                vector = get_embeddings(query, 50)
+                if isinstance(vector, list) and len(vector) >=1 :
+                    params["q"] = "{!knn f=dv_general_text topK=10}" + str(vector).replace(" ", "")
+                    params["hl"] = "false"
+                    CHAPTER_SOLR_URL = SOLR_URL #.replace("query", "search")
 
         try:
             resp = requests.get(CHAPTER_SOLR_URL, params=params, timeout=5)
@@ -249,12 +297,14 @@ def search(request):
             highlights = data.get('highlighting', {})
 
             for doc in solr_docs:
-                highlight = ""
+                highlight = "<span class='collapsable-content'>"
+
                 if doc.get('id') in highlights:
                     if 'text' in highlights.get(doc.get('id')):
-                        highlight += "<b>Text:</b> " + highlights.get(doc.get('id')).get('text')[0]
+                        highlight += "<b><u>Text:</u></b> " + highlights.get(doc.get('id')).get('text')[0] 
                     if 'judge_ruling' in highlights.get(doc.get('id')):
-                        highlight += "<br><b>Judge_ruling:</b> " + highlights.get(doc.get('id')).get('judge_ruling')[0]
+                        highlight += "<br><b><u>Judge_ruling:</u></b> " + highlights.get(doc.get('id')).get('judge_ruling')[0]
+                highlight += "</span>"
                 # Adjust these field names to match your Solr schema
                 results.append({
                     'id':  doc.get('docket_number'),
@@ -278,3 +328,35 @@ def search(request):
         'qTime': qTime,
         'num_found': num_found,
     })
+
+
+
+@require_POST
+@csrf_protect
+def chat(request):
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    messages = body.get("messages", [])
+    if not isinstance(messages, list) or not messages:
+        return JsonResponse({"error": "messages must be a non-empty list"}, status=400)
+
+    # Basic sanitisation: each item must be a dict with role + content strings
+    clean = []
+    for m in messages[-12:]:
+        if (isinstance(m, dict)
+                and m.get("role") in ("user", "assistant")
+                and isinstance(m.get("content"), str)):
+            clean.append({"role": m["role"], "content": m["content"][:4000]})
+
+    if not clean:
+        return JsonResponse({"error": "No valid messages"}, status=400)
+
+    try:
+        reply = get_reply(clean)
+    except Exception as e:
+        return JsonResponse({"error": f"Server error: {e}"}, status=500)
+
+    return JsonResponse({"reply": reply})    
