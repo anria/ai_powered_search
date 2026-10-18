@@ -16,11 +16,9 @@
     {% block banner %}
     <header class="banner">
         <div class="banner-left">
-            <!-- Inline SVG logo -->
             {% block svg %}
                 {{ block.super }}
-                <!-- to be overridden -->
-{% include 'base_svg_logo.html' %}
+                {% include 'base_svg_logo.html' %}
               
             {% endblock svg %}
             <span class="banner-title"><a href="/">AI Powered Search</a></span>
@@ -50,13 +48,15 @@
                 {% else %}
                    <!--  <span class="btn-next disabled">End</span> -->
                 {% endif %}
+
+                <select onchange="location = this.value;">
+                    <option value="">Jump to...</option>
+                    {% for ch in chapters_range %}
+                    <option value="{% url 'chapter' ch %}" {% if ch == chapter_id %}selected{% endif %}>Chapter {{ ch }}</option>
+                    {% endfor %}
+                </select>
+                <a href="{% url 'judgements' %}" target="_blank" class="btn-next">View judgements</a>
             </div>     
-            <select onchange="location = this.value;">
-                <option value="">Jump to...</option>
-                {% for ch in chapters_range %}
-                <option value="{% url 'chapter' ch %}" {% if ch == chapter_id %}selected{% endif %}>Chapter {{ ch }}</option>
-                {% endfor %}
-            </select>
 
                
         </div>

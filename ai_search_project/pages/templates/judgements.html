@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Assistant Judgements — AI Search</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'judgements.css' %}">
+</head>
+<body>
+    {% block banner %}
+    <header class="banner">
+        <div class="banner-left">
+            {% block svg %}
+                {% include 'base_svg_logo.html' %}
+            {% endblock svg %}
+            <span class="banner-title">Assistant Judgements</span>
+        </div>
+        <div class="banner-right">
+            <span class="stats" id="stats">Loading…</span>
+        </div>
+    </header>
+    {% endblock banner %}
+
+    <main>
+        <div class="filters" id="filters">
+            <button data-filter="all" class="active">All</button>
+            <button data-filter="pending">Pending</button>
+            <button data-filter="approved">Approved</button>
+            <button data-filter="rejected">Rejected</button>
+            <button data-filter="up">👍 Only</button>
+            <button data-filter="down">👎 Only</button>
+        </div>
+        <div id="records"></div>
+    </main>
+
+    <script>
+        const recordsEl = document.getElementById("records");
+        const statsEl   = document.getElementById("stats");
+        const filtersEl = document.getElementById("filters");
+
+        let allItems   = [];
+        let activeFilter = "all";
+
+        function getCookie(name) {
+            const m = document.cookie.match(new RegExp("(^|;\\s*)" + name + "=([^;]*)"));
+            return m ? decodeURIComponent(m[2]) : "";
+        }
+
+        function fmtTime(iso) {
+            try {
+                const d = new Date(iso);
+                return d.toLocaleString();
+            } catch { return iso; }
+        }
+
+        function statusOf(item) {
+            if (item.approved === true)  return "approved";
+            if (item.approved === false) return "rejected";
+            return "pending";
+        }
+
+        function passesFilter(item, filter) {
+            const status = statusOf(item);
+            if (filter === "all")      return true;
+            if (filter === "pending")  return status === "pending";
+            if (filter === "approved") return status === "approved";
+            if (filter === "rejected") return status === "rejected";
+            if (filter === "up")       return item.judgement === 1;
+            if (filter === "down")     return item.judgement === 0;
+            return true;
+        }
+
+        function render() {
+            recordsEl.innerHTML = "";
+            const visible = allItems
+                .map((item, idx) => ({ item, idx }))
+                .filter(({ item }) => passesFilter(item, activeFilter));
+
+            if (visible.length === 0) {
+                recordsEl.innerHTML = '<div class="empty">No records match this filter.</div>';
+            }
+
+            for (const { item, idx } of visible) {
+                recordsEl.appendChild(renderRecord(item, idx));
+            }
+
+            const total    = allItems.length;
+            const approved = allItems.filter(i => i.approved === true).length;
+            const rejected = allItems.filter(i => i.approved === false).length;
+            const pending  = total - approved - rejected;
+            statsEl.innerHTML =
+                `${total} total · <strong>${approved}</strong> approved · ` +
+                `${rejected} rejected · ${pending} pending`;
+        }
+
+        function renderRecord(item, idx) {
+            const status = statusOf(item);
+            const div = document.createElement("div");
+            div.className = "record " + status;
+
+            const judgementBadge = item.judgement === 1
+                ? '<span class="badge badge-up">👍 Helpful</span>'
+                : '<span class="badge badge-down">👎 Not helpful</span>';
+
+            const statusBadge =
+                status === "approved" ? '<span class="badge badge-approved">Approved</span>' :
+                status === "rejected" ? '<span class="badge badge-rejected">Rejected</span>' :
+                                        '<span class="badge badge-pending">Pending</span>';
+
+            const notesValue = item.notes || "";
+            div.innerHTML = `
+                <div class="record-header">
+                    <div class="badges">
+                        ${judgementBadge}
+                        ${statusBadge}
+                        <span class="index-tag">#${idx}</span>
+                    </div>
+                    <span class="timestamp">${fmtTime(item.timestamp)}</span>
+                </div>
+                <div class="field">
+                    <div class="field-label">Prompt</div>
+                    <div class="field-value">${escapeHtml(item.prompt)}</div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Answer</div>
+                    <div class="field-value answer">${escapeHtml(item.answer)}</div>
+                </div>
+                <div class="field field-notes">
+                    <div class="field-label">Notes</div>
+                    <textarea class="notes-input" data-idx="${idx}"
+                              placeholder="Add a note about this judgement…"
+                              maxlength="4000">${escapeHtml(notesValue)}</textarea>
+                    <div class="notes-actions">
+                        <span class="notes-saved" style="display:none;">Saved ✓</span>
+                        <button type="button" data-idx="${idx}"
+                                class="btn-save-notes" disabled>Save notes</button>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button class="btn-approve ${item.approved === true ? "current" : ""}"
+                            data-idx="${idx}" data-approved="true">Approve</button>
+                    <button class="btn-reject ${item.approved === false ? "current" : ""}"
+                            data-idx="${idx}" data-approved="false">Reject</button>
+                </div>
+            `;
+
+            div.querySelectorAll(".actions button").forEach(btn => {
+                btn.addEventListener("click", () => updateJudgement(
+                    parseInt(btn.dataset.idx, 10),
+                    btn.dataset.approved === "true",
+                ));
+            });
+
+            // --- Notes wiring ---
+            const textarea  = div.querySelector(".notes-input");
+            const saveBtn   = div.querySelector(".btn-save-notes");
+            const savedMsg  = div.querySelector(".notes-saved");
+
+            textarea.addEventListener("input", () => {
+                saveBtn.disabled = textarea.value === (item.notes || "");
+            });
+
+            saveBtn.addEventListener("click", async () => {
+                saveBtn.disabled = true;
+                try {
+                    const resp = await fetch(`/api/judgements/${idx}/notes/`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": getCookie("csrftoken"),
+                        },
+                        body: JSON.stringify({ notes: textarea.value }),
+                    });
+                    if (!resp.ok) {
+                        console.warn("notes save failed", await resp.text());
+                        saveBtn.disabled = false;
+                        return;
+                    }
+                    const data = await resp.json();
+                    allItems[idx] = data.record;
+                    item.notes = data.record.notes;
+                    savedMsg.style.display = "inline";
+                    setTimeout(() => { savedMsg.style.display = "none"; }, 1500);
+                } catch (err) {
+                    console.warn("notes network error", err);
+                    saveBtn.disabled = false;
+                }
+            });
+        
+            return div;
+        }
+
+        function escapeHtml(s) {
+            const div = document.createElement("div");
+            div.textContent = s == null ? "" : String(s);
+            return div.innerHTML;
+        }
+
+        async function load() {
+            try {
+                const resp = await fetch("/api/judgements/");
+                const data = await resp.json();
+                allItems = data.items || [];
+                render();
+            } catch (err) {
+                recordsEl.innerHTML = '<div class="empty">Could not load judgements.</div>';
+            }
+        }
+
+        async function updateJudgement(idx, approved) {
+            try {
+                const resp = await fetch(`/api/judgements/${idx}/`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken"),
+                    },
+                    body: JSON.stringify({ approved }),
+                });
+                if (!resp.ok) {
+                    console.warn("update failed", await resp.text());
+                    return;
+                }
+                const data = await resp.json();
+                // Replace the record locally and re-render
+                allItems[idx] = data.record;
+                render();
+            } catch (err) {
+                console.warn("network error", err);
+            }
+        }
+
+        filtersEl.addEventListener("click", (e) => {
+            const btn = e.target.closest("button[data-filter]");
+            if (!btn) return;
+            filtersEl.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            activeFilter = btn.dataset.filter;
+            render();
+        });
+
+        load();
+    </script>
+</body>
+</html>

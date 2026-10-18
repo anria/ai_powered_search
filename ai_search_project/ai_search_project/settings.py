@@ -19,6 +19,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'ai_search_project.middleware.SilenceChromeDevToolsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -64,6 +65,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'pages' / 'static']
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+#APPEND_SLASH=False
 
 # Solr configuration - DOCKER
 SOLR_URL = 'http://10.4.0.5:8983/solr/ai_law/query'
@@ -75,7 +77,7 @@ OLLAMA_EMBED_MODEL = 'hf.co/ggml-org/e5-small-v2-Q8_0-GGUF:Q8_0'
 
 # OLLAMA_CHATBOT_MODEL = 'FableForge-AI/nexus-legal'
 OLLAMA_CHATBOT_MODEL = 'granite3.1-moe:1b'
-OLLAMA_CHATBOT_ENDPOINT = '/api/chat'
+OLLAMA_CHATBOT_ENDPOINT = '/api/chat/'
 OLLAMA_CHATBOT_TIMEOUT = 180000
 
 # Product dataset
@@ -83,4 +85,4 @@ PRODUCT_DATA_FILE = 'data/product.csv'
 
 # CONFIG URLS - Local
 #SOLR_URL = 'http://localhost:8983/solr/ai_law/query'
-#OLLAMA_URL = 'http://localhost:11434'
+# OLLAMA_URL = 'http://localhost:11434'

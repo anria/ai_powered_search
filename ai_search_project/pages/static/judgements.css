@@ -1,0 +1,231 @@
+:root {
+    --bg:            #1e293b;
+    --bg-elevated:   #334155;
+    --bg-surface:    #0f172a;
+    --border:        #475569;
+    --border-accent: #00d4ff;
+    --text:          #e2e8f0;
+    --text-muted:    #94a3b8;
+    --accent:        #00d4ff;
+    --accent-hover:  #38bdf8;
+    --accent-glow:   rgba(0, 212, 255, 0.35);
+    --up:            #00d4ff;
+    --down:          #ff6b6b;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+header.banner {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-bottom: 1px solid var(--border-accent);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.banner-title {
+    color: var(--accent);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-shadow: 0 0 12px var(--accent-glow);
+}
+.stats {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+.stats strong { color: var(--accent); }
+
+main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 24px;
+}
+.filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+.filters button {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+}
+.filters button:hover { border-color: var(--accent); color: var(--accent); }
+.filters button.active {
+    background: var(--accent);
+    color: #0f172a;
+    border-color: var(--accent);
+    font-weight: 600;
+}
+
+.record {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 16px;
+    transition: all 0.18s ease;
+}
+.record.rejected {
+    opacity: 0.55;
+    filter: grayscale(0.5);
+    border-left-color: var(--border);
+}
+.record.approved {
+    border-left-color: var(--accent);
+    box-shadow: 0 0 18px rgba(0, 212, 255, 0.12);
+}
+
+.record-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.badges { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+.badge-up    { background: rgba(0, 212, 255, 0.15); color: var(--up); border: 1px solid var(--up); }
+.badge-down  { background: rgba(255, 107, 107, 0.15); color: var(--down); border: 1px solid var(--down); }
+.badge-pending  { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.badge-approved { background: rgba(0, 212, 255, 0.2); color: var(--accent); border: 1px solid var(--accent); }
+.badge-rejected { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); border: 1px solid var(--border); }
+
+.timestamp { color: var(--text-muted); font-size: 12px; }
+.index-tag  { color: var(--text-muted); font-size: 12px; font-family: ui-monospace, monospace; }
+
+.field { margin-bottom: 12px; }
+.field-label {
+    color: var(--accent);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.field-value {
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 14px;
+}
+.field-value.answer { color: var(--text); }
+
+.field-notes .field-value,
+.notes-input {
+    width: 100%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    resize: vertical;
+    min-height: 52px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.notes-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+}
+.notes-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+}
+.notes-actions button {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 4px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+}
+.notes-actions button:hover {
+    background: var(--accent);
+    color: #0f172a;
+}
+.notes-actions button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+.notes-saved {
+    color: var(--accent);
+    font-size: 12px;
+    margin-right: auto;
+}
+
+
+.actions { display: flex; gap: 8px; margin-top: 14px; }
+.actions button {
+    padding: 7px 18px;
+    border-radius: 22px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+    border: 1.5px solid;
+    background: transparent;
+}
+.btn-approve { border-color: var(--accent); color: var(--accent); }
+.btn-approve:hover { background: var(--accent); color: #0f172a; box-shadow: 0 0 14px var(--accent-glow); }
+.btn-reject  { border-color: var(--text-muted); color: var(--text-muted); }
+.btn-reject:hover { background: var(--text-muted); color: var(--bg); }
+.btn-approve.current,
+.btn-reject.current {
+    background: var(--accent);
+    color: #0f172a;
+}
+.btn-reject.current { background: var(--text-muted); color: var(--bg); }
+.actions button:disabled { opacity: 0.5; cursor: default; }
+
+.empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+.banner-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.banner-left svg {
+    width: 38px;
+    height: 38px;
+    filter: drop-shadow(0 0 6px var(--accent-glow));
+}        
