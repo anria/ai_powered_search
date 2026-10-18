@@ -4,8 +4,11 @@
 
 <div id="chat-window" class="chat-hidden" role="dialog" aria-label="Chat">
   <header class="chat-header">
-    <span>AI Search Assistant</span>
-    <button id="chat-close" aria-label="Close chat">×</button>
+      <span>AI Search Assistant</span>
+      <div class="chat-header-buttons">
+          <button id="chat-fullscreen" aria-label="Toggle full screen" title="Full screen">⛶</button>
+          <button id="chat-close" aria-label="Close chat">×</button>
+      </div>
   </header>
 
   <div id="chat-messages" class="chat-messages">
@@ -25,10 +28,11 @@
   window.CHATBOT_CONFIG = {
     ollamaHost:  "{{ CHATBOT_CONFIG.ollama_host|escapejs }}",
     ollamaModel: "{{ CHATBOT_CONFIG.ollama_model|escapejs }}",
-    chatEndpoint: "{{ CHATBOT_CONFIG.chat_endpoint|escapejs }}"
+    chatEndpoint: "{{ CHATBOT_CONFIG.chat_endpoint|escapejs }}",
+    feedbackEndpoint: "{{ CHATBOT_CONFIG.feedback_endpoint|escapejs }}",
     timeoutMs:    "{{ CHATBOT_CONFIG.timeout_ms|default:180000 }}"
   };
 </script>
 
-<link rel="stylesheet" href="{% static 'chatbot.css' %}">
+
 <script src="{% static 'chatbot.js' %}" defer></script>
