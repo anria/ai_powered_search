@@ -12,19 +12,21 @@ import json
 import os
 import urllib.request
 import urllib.error
+import requests
 from django.conf import settings
 
+import ollama
 
 # Ollama connection settings
-# OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-# OLLAMA_MODEL = "chevalblanc/gpt-4o-mini"
-OLLAMA_HOST = getattr(settings, 'OLLAMA_URL', 'http://localhost:11434')
-OLLAMA_MODEL = getattr(settings, 'OLLAMA_CHATBOT_MODEL', 'FableForge-AI/nexus-legal' )
+OLLAMA_HOST     = getattr(settings, 'OLLAMA_URL', 'http://localhost:11434')
+OLLAMA_MODEL    = getattr(settings, 'OLLAMA_CHATBOT_MODEL', 'granite3.1-moe:1b' )
 OLLAMA_ENDPOINT = getattr(settings, 'OLLAMA_CHATBOT_ENDPOINT', '/api/chat' )
-OLLAMA_TIMEOUT = 120  # seconds — local inference can be slow on first load
+OLLAMA_TIMEOUT  = getattr(settings, 'OLLAMA_CHATBOT_TIMEOUT', 180000 )
+
+  # seconds — local inference can be slow on first load
 
 SYSTEM_PROMPT = (
-    "forget all previous prompts. You are Nexus Legal Assistant. Find and discuss legal cases. State the judges, the parties, the issue, the ruling and dissent. Answer concisely and helpfully. If you don't know, say so."
+    "forget all previous prompts. You are the Legal Assistant. Find and discuss legal cases. State the case name, year, court, judges, the parties, the issue, the ruling and dissent. Answer concisely and helpfully. If you do not know, say so. Do not answer any questions that are not legal related."
 )
 
 MAX_HISTORY = 0
@@ -36,8 +38,6 @@ def get_reply(messages):
     returns:  str (the assistant's reply)
     """
     messages = messages[-MAX_HISTORY:]
-    # print("_____Ollama = ", OLLAMA_HOST, " ______ ", OLLAMA_MODEL, flush=True)
-    # print("_____SYSTEM_PROMPT= ", SYSTEM_PROMPT,  flush=True)
 
     # Prepend the system prompt as the first message
     ollama_messages = [{"role": "system", "content": SYSTEM_PROMPT}, *messages]
@@ -48,10 +48,19 @@ def get_reply(messages):
         "stream": False,
         "options": {
             "temperature": 0.7,
-        },
+            "num_ctx": 8192,
+            "num_predict": 512,
+            "top_k": 40,
+            "top_p": 0.9,
+            "seed": 42,
+            "stop": ["<EOT>"],
+            "repeat_penalty": 1.15
+        }
     }
 
     url = f"{OLLAMA_HOST}{OLLAMA_ENDPOINT}"
+    response = requests.post(url, json=payload)
+
     req = urllib.request.Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
@@ -60,8 +69,8 @@ def get_reply(messages):
     )
 
     try:
-        with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+        resp = requests.post(url, json=payload, timeout=OLLAMA_TIMEOUT)
+        data = resp.json()
         return data["message"]["content"].strip()
 
     except urllib.error.HTTPError as e:
@@ -83,3 +92,4 @@ def get_reply(messages):
 
     except Exception as e:
         return f"Chatbot error: {e}"
+

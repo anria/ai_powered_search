@@ -5,7 +5,13 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
-from django.views.decorators.http import require_POST
+
+from .feedback import (
+    append as fb_append,
+    load_all as fb_load_all,
+    update_approved as fb_update,
+    update_notes as fb_update_notes,   # <-- new 10/17/2026
+)
 
 import json
 from pathlib import Path
@@ -26,13 +32,6 @@ from .chatbot import get_reply
 # Placeholder content for 15 chapters (you can replace with database models)
 # usage: 'content': CHAPTERS[chapter_id],
 
-CHAPTERS = {
-    i: f"<h2>Chapter {i}</h2><p>This is the content of chapter {i}. " +
-       f"Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
-       f"Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>" +
-       f"<p>More text for chapter {i} to make it longer and demonstrate the layout.</p>"
-    for i in range(1, 16)
-}
 
 # ---- Solr-backed search ----
 SOLR_URL = getattr(settings, 'SOLR_URL', 'http://10.4.0.5:8983/solr/ai_search/query')
@@ -128,7 +127,7 @@ def get_embeddings(text_input, dimension):
     payload = {
         "model": embed_model,
         "input": text_input,
-        "stream": 0
+        "stream": False
     }
 
     start = time.perf_counter()
@@ -148,30 +147,31 @@ def get_embeddings(text_input, dimension):
     return full_embedding.tolist()  
 
 def get_ai_chat(text_input):
+    # NOT USED -- but keep this for now for the format
     embed_model = OLLAMA_CHATBOT_MODEL
     payload = {
         "model": embed_model,
         "messages": [
         {
           "role": "system",
-          "content": "forget all previous prompts. You are NEXUS-LEGAL, a domain-specialized AI assistant for legal review. Respond in 4 short sentences. If asked, note the parties, the judge, the issue and the ruling and if available, the dissenting judge and opinion in list format."
+          "content": "forget all previous prompts. You are a domain-specialized AI assistant for legal review. Respond in 4 short sentences. If asked, note the parties, the judge, the issue and the ruling and if available, the dissenting judge and opinion in list format."
         },
         {
           "role": "user",
           "content": text_input
         }
-      ],
-      "stream": False,
-      "format": {
-        "type": "object",
-        "properties": {
-          "judge_ruling": { "type": "string" },
-          "parties": { "type": "string" },
-          "issue": { "type": "string"},
-          "dissenting_opinion": { "type": "string" }
-        },
-        "required": ["judge_ruling", "parties",  "issue", "dissenting_opinion"]
-      }
+        ],
+        "stream": False,
+        "format": {
+            "type": "object",
+            "properties": {
+              "judge_ruling": { "type": "string" },
+              "parties": { "type": "string" },
+              "issue": { "type": "string"},
+              "dissenting_opinion": { "type": "string" }
+            },
+            "required": ["judge_ruling", "parties",  "issue", "dissenting_opinion"]
+          }
     }
     url = OLLAMA_URL.replace("embed", "chat")
     try:
@@ -194,32 +194,7 @@ def get_ai_chat(text_input):
     return message
 
 
-def search_chatbot(request, query, chapter_id):
-    template = 'search_chat.html'
-    results = get_ai_chat(query)
-    print("_____ results", results, flush=True)
-    output = ""
-    error = ""
-    if "error" in results:
-        error = "<em>" + results["error"] + "</em>"
-        output = results
-    else:
-        if "parties" in results:
-            output = output + "<b>Parties: </b>" + results["parties"] + "<br>"
-        if "issue" in results:
-            output = output + "<b>Issue: </b>" + results["issue"] + "<br>"
-        if "judge_ruling" in results:    
-            output = output + "<b>Judge Opinion: </b>" + results["judge_ruling"] + "<br>"
-        if "dissenting_opinion" in results:
-            output = output + "<b>Dissenting Opinion: </b>" + results["dissenting_opinion"] + "<br>"
 
-
-    return render(request, template, {
-        'results':   output,
-        'query':     query,
-        'chapter_id': chapter_id,
-        'error':     error,
-    })
 
 def extract_relationships(text, lang_model, coref_model):
     resolved_text = resolve_coreferences(text, coref_model)
@@ -250,8 +225,6 @@ def chapter5_get_query(origQueryJson):
     return origQueryJson
 
 
-
-
 def search(request):
     query = request.GET.get('q', '').strip()
     chapter_id = request.GET.get('chapter_id', '').strip()
@@ -263,10 +236,6 @@ def search(request):
     chapter_reqHandlers = [7,13]
     template = 'search_results.html'
 
-
-    if int(chapter_id) >= 14: 
-        return search_chatbot(request, query, chapter_id)
-    print("____ made it past the chatbot", flush=True)
 
     CHAPTER_SOLR_URL = SOLR_URL
     if int(chapter_id) in chapter_reqHandlers:
@@ -334,6 +303,7 @@ def search(request):
 @require_POST
 @csrf_protect
 def chat(request):
+    print("_____ inside views > chat")
     try:
         body = json.loads(request.body.decode("utf-8"))
     except (ValueError, UnicodeDecodeError):
@@ -355,8 +325,84 @@ def chat(request):
         return JsonResponse({"error": "No valid messages"}, status=400)
 
     try:
+        print("____GOING TO TRY TRY TRY ")
         reply = get_reply(clean)
+        print("____DONE TO TRY TRY TRY ", reply, flush=True)
+
     except Exception as e:
+        print("____ CHAT Exception ", e)
         return JsonResponse({"error": f"Server error: {e}"}, status=500)
 
     return JsonResponse({"reply": reply})    
+
+
+@require_POST
+@csrf_protect
+def feedback(request):
+    """Record a thumbs up/down on an assistant answer."""
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    prompt    = str(body.get("prompt", ""))[:4000]
+    answer    = str(body.get("answer", ""))[:20000]
+    judgement = body.get("judgement")
+    notes     = str(body.get("notes", ""))[:4000]   # <-- new
+
+    if judgement not in (0, 1):
+        return JsonResponse({"error": "judgement must be 0 or 1"}, status=400)
+    if not prompt or not answer:
+        return JsonResponse({"error": "prompt and answer are required"}, status=400)
+
+    try:
+        record = fb_append(prompt, answer, judgement, notes)
+    except Exception as e:
+        return JsonResponse({"error": f"Could not save feedback: {e}"}, status=500)
+
+    return JsonResponse({"ok": True, "record": record})
+
+
+def judgements(request):
+    """Admin page listing all assistant responses."""
+    return render(request, "judgements.html")
+
+
+def judgements_data(request):
+    """JSON feed for the judgements page."""
+    return JsonResponse({"items": fb_load_all()})
+
+
+@require_POST
+@csrf_protect
+def judgement_update(request, idx):
+    """Approve or reject a record at index `idx`."""
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    approved = body.get("approved")
+    if approved not in (True, False):
+        return JsonResponse({"error": "approved must be true or false"}, status=400)
+
+    record = fb_update(idx, approved)
+    if record is None:
+        return JsonResponse({"error": "index out of range"}, status=404)
+    return JsonResponse({"ok": True, "record": record})    
+
+
+@require_POST
+@csrf_protect
+def judgement_notes(request, idx):
+    """Update the notes field on a record."""
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    notes = str(body.get("notes", ""))[:4000]
+    record = fb_update_notes(idx, notes)
+    if record is None:
+        return JsonResponse({"error": "index out of range"}, status=404)
+    return JsonResponse({"ok": True, "record": record})    
